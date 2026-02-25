@@ -80,11 +80,12 @@ if pd.notna(last_scrape):
 
 # Disclaimer
 st.warning(
-    "**Estimation notice:** Some central banks (China, India, Kazakhstan, "
-    "Russia, Turkey) report gold reserves in monetary value rather than "
-    "weight. For these countries, metric tonne figures are **estimated** "
-    "from reported USD values using prevailing gold prices and may differ "
-    "from official weight-based figures."
+    "**Estimation notice:** India (RBI) and Kazakhstan (NBK) report gold "
+    "reserves in USD value rather than physical weight. For these two "
+    "countries, metric tonne figures are **estimated** from reported USD "
+    "values using prevailing gold prices and may differ from official "
+    "weight-based figures. All other countries report in fine troy ounces "
+    "(converted to tonnes at the fixed rate of 32,150.75 oz/tonne)."
 )
 
 # ===================================================================
