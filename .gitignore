@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+data/*.png
+data/*.json
+data/*.xlsx
+data/grid_raw_scrape.csv
+.env
