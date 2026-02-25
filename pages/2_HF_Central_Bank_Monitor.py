@@ -7,6 +7,7 @@ Reads gold_history.csv produced by the gold_tracker scrapers and shows:
 """
 
 import pathlib
+from datetime import timedelta
 
 import streamlit as st
 import pandas as pd
@@ -25,10 +26,14 @@ _TRACKER_CSV = _HERE.parent / "gold_tracker" / "data" / "gold_history.csv"
 
 LOGO_PATH = _HERE / "assets" / "logo.webp"
 
+# last_run.txt — written by main.py every run
+_LAST_RUN_LOCAL = _HERE / "data" / "last_run.txt"
+_LAST_RUN_TRACKER = _HERE.parent / "gold_tracker" / "data" / "last_run.txt"
+
 # ---------------------------------------------------------------------------
 # Data loading
 # ---------------------------------------------------------------------------
-@st.cache_data(show_spinner="Loading Central Bank Monitor data ...")
+@st.cache_data(show_spinner="Loading Central Bank Monitor data ...", ttl=timedelta(hours=1))
 def load_monitor_data() -> pd.DataFrame:
     csv_path = None
     if _TRACKER_CSV.exists():
@@ -73,10 +78,16 @@ if LOGO_PATH.exists():
 st.title("HF Central Bank Monitor")
 st.caption("Source: Direct scraping of official central bank websites")
 
-# Last run timestamp
-last_scrape = df["Date_Scraped"].max()
-if pd.notna(last_scrape):
-    st.info(f"Last monitor run: **{last_scrape.strftime('%Y-%m-%d %H:%M')} UTC**")
+# Last run timestamp (from last_run.txt written by main.py each run)
+_last_run_file = _LAST_RUN_TRACKER if _LAST_RUN_TRACKER.exists() else _LAST_RUN_LOCAL
+if _last_run_file.exists():
+    _last_run_ts = _last_run_file.read_text().strip()
+    st.info(f"Last monitor run: **{_last_run_ts} UTC**")
+else:
+    # Fallback to CSV Date_Scraped if last_run.txt doesn't exist yet
+    last_scrape = df["Date_Scraped"].max()
+    if pd.notna(last_scrape):
+        st.info(f"Last monitor run: **{last_scrape.strftime('%Y-%m-%d %H:%M')} UTC**")
 
 # Disclaimer
 st.warning(

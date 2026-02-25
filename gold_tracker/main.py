@@ -12,6 +12,7 @@ Schedule via Task Scheduler (Windows):
     Create a task that runs: python "C:\\...\\gold_tracker\\main.py"
 """
 
+import os
 import sys
 import traceback
 from datetime import datetime, timezone
@@ -112,6 +113,13 @@ def run() -> None:
         except Exception as exc:
             print(f"[ERROR]  {country}: {exc}")
             traceback.print_exc()
+
+    # Write last-run timestamp so the Streamlit dashboard can show it
+    last_run_path = os.path.join(os.path.dirname(__file__), "data", "last_run.txt")
+    run_ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    os.makedirs(os.path.dirname(last_run_path), exist_ok=True)
+    with open(last_run_path, "w") as f:
+        f.write(run_ts)
 
     print(f"\n{'=' * 60}")
     print(f"  Run complete -- {changes} update(s) detected.")
