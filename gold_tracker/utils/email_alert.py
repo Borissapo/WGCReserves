@@ -1,21 +1,36 @@
 """
 Professional HTML email alerts with embedded Matplotlib charts.
 
-Sends via the local Outlook desktop app using COM automation (win32com).
-This avoids SMTP AUTH issues with Office 365 tenants that have basic
-authentication disabled.
+Supports two delivery methods (chosen automatically):
+  1. Outlook COM (win32com) — used on Windows when Outlook is available.
+  2. SMTP — used on Linux / CI when SMTP_* env vars are configured.
+     Works with Office 365: smtp.office365.com:587.
 
-Credentials in .env are only used for RECEIVER_EMAIL (the recipient).
-The sender is whichever account is active in Outlook.
+Env vars (in .env or GitHub Secrets):
+  RECEIVER_EMAIL  — recipient address
+  SMTP_SERVER     — e.g. smtp.office365.com  (enables SMTP mode)
+  SMTP_PORT       — e.g. 587
+  SMTP_USER       — sender email (usually same as the account)
+  SMTP_PASSWORD   — password or app password
 """
 
 import os
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.image import MIMEImage
 
 from dotenv import load_dotenv
 
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"))
 
 RECEIVER_EMAIL = os.getenv("RECEIVER_EMAIL", "")
+SMTP_SERVER = os.getenv("SMTP_SERVER", "")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USER = os.getenv("SMTP_USER", "")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
+
+STREAMLIT_URL = "https://goldreservesvista.streamlit.app/HF_Central_Bank_Monitor"
 
 
 def send_alert(
@@ -60,14 +75,60 @@ def send_alert(
     if flow_chart_path:
         inline_images["flow_chart"] = flow_chart_path
 
-    _send_via_outlook(
-        to=RECEIVER_EMAIL,
-        subject=subject,
-        html_body=html,
-        inline_images=inline_images,
-    )
+    # Choose delivery method
+    if SMTP_SERVER and SMTP_USER and SMTP_PASSWORD:
+        _send_via_smtp(
+            to=RECEIVER_EMAIL,
+            subject=subject,
+            html_body=html,
+            inline_images=inline_images,
+        )
+    else:
+        _send_via_outlook(
+            to=RECEIVER_EMAIL,
+            subject=subject,
+            html_body=html,
+            inline_images=inline_images,
+        )
     print(f"  [EMAIL SENT] Alert delivered to {RECEIVER_EMAIL}")
 
+
+# ------------------------------------------------------------------
+# SMTP delivery (Office 365 / any SMTP server)
+# ------------------------------------------------------------------
+
+def _send_via_smtp(
+    to: str,
+    subject: str,
+    html_body: str,
+    inline_images: dict[str, str] | None = None,
+) -> None:
+    """Send email via SMTP with TLS (works with Office 365, Gmail, etc.)."""
+    msg = MIMEMultipart("related")
+    msg["From"] = SMTP_USER
+    msg["To"] = to
+    msg["Subject"] = subject
+    msg.attach(MIMEText(html_body, "html"))
+
+    if inline_images:
+        for cid, path in inline_images.items():
+            if not os.path.isfile(path):
+                continue
+            with open(path, "rb") as f:
+                img = MIMEImage(f.read())
+            img.add_header("Content-ID", f"<{cid}>")
+            img.add_header("Content-Disposition", "inline", filename=os.path.basename(path))
+            msg.attach(img)
+
+    with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+        server.starttls()
+        server.login(SMTP_USER, SMTP_PASSWORD)
+        server.sendmail(SMTP_USER, to, msg.as_string())
+
+
+# ------------------------------------------------------------------
+# Outlook COM delivery (Windows local)
+# ------------------------------------------------------------------
 
 PR_ATTACH_CONTENT_ID = "http://schemas.microsoft.com/mapi/proptag/0x3712001F"
 PR_ATTACH_FLAGS = "http://schemas.microsoft.com/mapi/proptag/0x37140003"
@@ -187,9 +248,17 @@ def _build_html(
         <td style="padding:9px 14px; color:#fff; border-bottom:1px solid #2a2a4a;">{report_date}</td>
       </tr>
       <tr>
-        <td style="padding:9px 14px; color:#c0c0c0;">Source</td>
-        <td style="padding:9px 14px;">
+        <td style="padding:9px 14px; color:#c0c0c0; border-bottom:1px solid #2a2a4a;">Source</td>
+        <td style="padding:9px 14px; border-bottom:1px solid #2a2a4a;">
           <a href="{source_url}" style="color:#64b5f6; text-decoration:none;">View Source Data</a>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:9px 14px; color:#c0c0c0;">Dashboard</td>
+        <td style="padding:9px 14px;">
+          <a href="{STREAMLIT_URL}" style="color:#64b5f6; text-decoration:none;">
+            Open HF Central Bank Monitor
+          </a>
         </td>
       </tr>
     </tbody>

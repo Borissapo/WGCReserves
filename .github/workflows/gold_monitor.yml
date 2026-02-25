@@ -33,10 +33,14 @@ jobs:
 
       - name: Create .env for gold_tracker
         run: |
-          cat > gold_tracker/.env << 'EOF'
-          RECEIVER_EMAIL=
+          cat > gold_tracker/.env << EOF
+          RECEIVER_EMAIL=${{ secrets.RECEIVER_EMAIL }}
           TCMB_EVDS_KEY=${{ secrets.TCMB_EVDS_KEY }}
           PROXY_URL=${{ secrets.PROXY_URL }}
+          SMTP_SERVER=${{ secrets.SMTP_SERVER }}
+          SMTP_PORT=${{ secrets.SMTP_PORT }}
+          SMTP_USER=${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
           EOF
 
       - name: Run gold monitor
