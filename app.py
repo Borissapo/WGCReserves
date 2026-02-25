@@ -63,15 +63,22 @@ def _enrich(df: pd.DataFrame) -> pd.DataFrame:
 
 
 # ---------------------------------------------------------------------------
-# Data loading (cached)
+# Data loading (cached) — only cache successful loads
 # ---------------------------------------------------------------------------
 @st.cache_data(show_spinner="Loading gold reserves data ...")
+def _read_and_enrich(path: str) -> pd.DataFrame:
+    df = pd.read_csv(path)
+    if not df.empty:
+        return _enrich(df)
+    return pd.DataFrame()
+
+
 def load_data() -> pd.DataFrame:
     # ------ 1. Primary: scraped CSV from wgc_scraper.py ---------------------
     if SCRAPED_CSV.exists():
-        df = pd.read_csv(SCRAPED_CSV)
-        if not df.empty:
-            return _enrich(df)
+        result = _read_and_enrich(str(SCRAPED_CSV))
+        if not result.empty:
+            return result
 
     # ------ 2. Fallback: sample-generated CSV -------------------------------
     if FALLBACK_CSV.exists():
@@ -79,9 +86,9 @@ def load_data() -> pd.DataFrame:
             "Scraped data not found.  Run **`python wgc_scraper.py`** first "
             "to download fresh WGC data.  Showing sample data for now."
         )
-        df = pd.read_csv(FALLBACK_CSV)
-        if not df.empty:
-            return _enrich(df)
+        result = _read_and_enrich(str(FALLBACK_CSV))
+        if not result.empty:
+            return result
 
     return pd.DataFrame()
 
