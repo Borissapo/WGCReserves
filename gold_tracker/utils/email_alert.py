@@ -123,7 +123,8 @@ def _send_via_smtp(
     with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
         server.starttls()
         server.login(SMTP_USER, SMTP_PASSWORD)
-        server.sendmail(SMTP_USER, to, msg.as_string())
+        recipients = [r.strip() for r in to.split(",") if r.strip()]
+        server.sendmail(SMTP_USER, recipients, msg.as_string())
 
 
 # ------------------------------------------------------------------
