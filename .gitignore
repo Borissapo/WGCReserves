@@ -5,3 +5,7 @@ data/*.json
 data/*.xlsx
 data/grid_raw_scrape.csv
 .env
+gold_tracker/data/
+gold_tracker/*.log
+gold_tracker/*.bat
+gold_tracker/state.json
