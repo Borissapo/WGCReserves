@@ -26,6 +26,7 @@ _HERE = pathlib.Path(__file__).resolve().parent
 # The sample-generated CSV is kept as a secondary fallback.
 SCRAPED_CSV = _HERE / "data" / "wgc_reserves.csv"
 FALLBACK_CSV = _HERE / "data" / "gold_reserves.csv"
+LOGO_PATH = _HERE / "assets" / "logo.webp"
 
 
 # ---------------------------------------------------------------------------
@@ -106,8 +107,12 @@ if df.empty:
     st.stop()
 
 # ---------------------------------------------------------------------------
-# Sidebar - country selector
+# Sidebar - logo & country selector
 # ---------------------------------------------------------------------------
+if LOGO_PATH.exists():
+    st.sidebar.image(str(LOGO_PATH), use_container_width=True)
+    st.sidebar.markdown("---")
+
 countries_sorted = sorted(df["Country"].unique())
 
 st.sidebar.header("Country Selection")
