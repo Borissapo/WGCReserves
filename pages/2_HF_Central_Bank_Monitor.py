@@ -1,5 +1,5 @@
 """
-Central Bank Monitor — direct scraper results.
+HF Central Bank Monitor — high-frequency direct scraper results.
 
 Reads gold_history.csv produced by the gold_tracker scrapers and shows:
   1. Summary table with latest update per country.
@@ -70,8 +70,22 @@ if LOGO_PATH.exists():
 # ---------------------------------------------------------------------------
 # HEADER
 # ---------------------------------------------------------------------------
-st.title("Central Bank Monitor")
+st.title("HF Central Bank Monitor")
 st.caption("Source: Direct scraping of official central bank websites")
+
+# Last run timestamp
+last_scrape = df["Date_Scraped"].max()
+if pd.notna(last_scrape):
+    st.info(f"Last monitor run: **{last_scrape.strftime('%Y-%m-%d %H:%M')} UTC**")
+
+# Disclaimer
+st.warning(
+    "**Estimation notice:** Some central banks (China, India, Kazakhstan, "
+    "Russia, Turkey) report gold reserves in monetary value rather than "
+    "weight. For these countries, metric tonne figures are **estimated** "
+    "from reported USD values using prevailing gold prices and may differ "
+    "from official weight-based figures."
+)
 
 # ===================================================================
 # SECTION 1 — Summary table: latest update per country
